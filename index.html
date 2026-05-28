@@ -61,6 +61,12 @@ select:focus{border-color:#1890ff}
       <option value="cn2en">汉译英</option>
       <option value="fill">挖空填空</option>
     </select>
+    <label style="margin-left:8px">题库：</label>
+    <select id="catSelect">
+      <option value="all">全部</option>
+      <option value="ship">船舶英语</option>
+      <option value="daily">日常实用英语</option>
+    </select>
   </div>
   <div class="flex-row">
     <button class="btn btn-primary" onclick="nextQuestion()">📢 下一题</button>
@@ -92,11 +98,90 @@ select:focus{border-color:#1890ff}
 <script>
 // ====== 词库 ======
 const WORDS=[
-  {en:"apple",cn:"苹果"},{en:"banana",cn:"香蕉"},{en:"cat",cn:"猫"},
-  {en:"dog",cn:"狗"},{en:"elephant",cn:"大象"},{en:"fish",cn:"鱼"},
-  {en:"grape",cn:"葡萄"},{en:"horse",cn:"马"},{en:"ice",cn:"冰"},
-  {en:"juice",cn:"果汁"},{en:"kite",cn:"风筝"},{en:"lion",cn:"狮子"},
-  {en:"monkey",cn:"猴子"},{en:"nose",cn:"鼻子"}
+  // 船舶英语
+  {en:"general cargo ship",cn:"杂货船",cat:"ship"},
+  {en:"bulk cargo carrier",cn:"散货船",cat:"ship"},
+  {en:"tanker",cn:"油船",cat:"ship"},
+  {en:"chemical tanker",cn:"化学品船",cat:"ship"},
+  {en:"container vessel",cn:"集装箱船",cat:"ship"},
+  {en:"cruise ship",cn:"邮轮",cat:"ship"},
+  {en:"roll-on/roll-off",cn:"滚装船",cat:"ship"},
+  {en:"ice breaker",cn:"破冰船",cat:"ship"},
+  {en:"trawler",cn:"拖网渔船",cat:"ship"},
+  {en:"fire boat",cn:"消防船",cat:"ship"},
+  {en:"ocean survey ship",cn:"海洋调查船",cat:"ship"},
+  {en:"cruiser",cn:"巡洋舰",cat:"ship"},
+  {en:"destroyer",cn:"驱逐舰",cat:"ship"},
+  {en:"aircraft carrier",cn:"航空母舰",cat:"ship"},
+  {en:"submarine",cn:"潜艇",cat:"ship"},
+  {en:"load line mark",cn:"载重线标志",cat:"ship"},
+  {en:"draft mark",cn:"吃水标志",cat:"ship"},
+  {en:"deck line mark",cn:"甲板线标志",cat:"ship"},
+  {en:"steel plates",cn:"钢板",cat:"ship"},
+  {en:"wood",cn:"木材",cat:"ship"},
+  {en:"bow",cn:"船首",cat:"ship"},
+  {en:"midship",cn:"船中",cat:"ship"},
+  {en:"stern",cn:"船尾",cat:"ship"},
+  {en:"forecastle",cn:"艏楼",cat:"ship"},
+  {en:"bridge",cn:"桥楼",cat:"ship"},
+  {en:"poop",cn:"艉楼",cat:"ship"},
+  {en:"deckhouse",cn:"甲板室",cat:"ship"},
+  {en:"riveting",cn:"铆钉连接",cat:"ship"},
+  {en:"welding",cn:"焊接连接",cat:"ship"},
+  // 日常实用英语
+  {en:"employee",cn:"雇员",cat:"daily"},
+  {en:"social",cn:"社会的",cat:"daily"},
+  {en:"reputation",cn:"声誉",cat:"daily"},
+  {en:"behavior",cn:"行为",cat:"daily"},
+  {en:"accidentally",cn:"偶然地",cat:"daily"},
+  {en:"embarrassment",cn:"尴尬",cat:"daily"},
+  {en:"relationship",cn:"关系",cat:"daily"},
+  {en:"assumption",cn:"假定",cat:"daily"},
+  {en:"action",cn:"行动",cat:"daily"},
+  {en:"grateful",cn:"感激的",cat:"daily"},
+  {en:"forgive",cn:"原谅",cat:"daily"},
+  {en:"artificial intelligence",cn:"人工智能",cat:"daily"},
+  {en:"treatment",cn:"治疗",cat:"daily"},
+  {en:"crop",cn:"庄稼",cat:"daily"},
+  {en:"fertilize",cn:"施肥",cat:"daily"},
+  {en:"analyze",cn:"分析",cat:"daily"},
+  {en:"successfully",cn:"成功地",cat:"daily"},
+  {en:"ultimately",cn:"最终",cat:"daily"},
+  {en:"comfortable",cn:"舒适的",cat:"daily"},
+  {en:"assignment",cn:"任务",cat:"daily"},
+  {en:"freshman",cn:"一年级学生",cat:"daily"},
+  {en:"compete",cn:"竞争",cat:"daily"},
+  {en:"gentle",cn:"温和的",cat:"daily"},
+  {en:"chemical",cn:"化学的",cat:"daily"},
+  {en:"emotional",cn:"情感的",cat:"daily"},
+  {en:"dependent",cn:"依赖的",cat:"daily"},
+  {en:"quality",cn:"质量",cat:"daily"},
+  {en:"consume",cn:"消耗",cat:"daily"},
+  {en:"unique",cn:"独一无二的",cat:"daily"},
+  {en:"various",cn:"各种各样的",cat:"daily"},
+  {en:"convenience",cn:"方便",cat:"daily"},
+  {en:"complex",cn:"复杂的",cat:"daily"},
+  {en:"devote",cn:"奉献",cat:"daily"},
+  {en:"supply",cn:"供给",cat:"daily"},
+  {en:"extreme",cn:"极端的",cat:"daily"},
+  {en:"feedback",cn:"反馈",cat:"daily"},
+  {en:"therefore",cn:"因此",cat:"daily"},
+  {en:"economic",cn:"经济的",cat:"daily"},
+  {en:"balance",cn:"平衡",cat:"daily"},
+  {en:"abandon",cn:"抛弃",cat:"daily"},
+  {en:"muscle",cn:"肌肉",cat:"daily"},
+  {en:"paragraph",cn:"段落",cat:"daily"},
+  {en:"tough",cn:"困难的",cat:"daily"},
+  {en:"deny",cn:"否认",cat:"daily"},
+  {en:"pressure",cn:"压力",cat:"daily"},
+  {en:"participate",cn:"参加",cat:"daily"},
+  {en:"security",cn:"安全",cat:"daily"},
+  {en:"discount",cn:"折扣",cat:"daily"},
+  {en:"professional",cn:"专业的",cat:"daily"},
+  {en:"significance",cn:"重要性",cat:"daily"},
+  {en:"traditional",cn:"传统的",cat:"daily"},
+  {en:"neighborhood",cn:"街坊邻居",cat:"daily"},
+  {en:"graduation",cn:"毕业",cat:"daily"}
 ];
 
 // ====== 状态 ======
@@ -187,7 +272,11 @@ function handleMsg(conn,data){
 // ====== 出题 ======
 function nextQuestion(){
   const mode=document.getElementById('mode').value;
-  const word=WORDS[Math.floor(Math.random()*WORDS.length)];
+  const cat=document.getElementById('catSelect').value;
+  // 按题库分类筛选
+  const pool=cat==='all'?WORDS:WORDS.filter(w=>w.cat===cat);
+  if(pool.length===0){alert('该题库没有单词');return;}
+  const word=pool[Math.floor(Math.random()*pool.length)];
 
   let q,answer,fillOptions=null,correctPart=null;
 
