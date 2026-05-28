@@ -3,376 +3,305 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>英语抢答 - 教师端</title>
+<title>教师端 - 英语课堂抢答</title>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;min-height:100vh;padding:20px}
-.container{max-width:600px;margin:0 auto}
-h1{text-align:center;color:#333;font-size:24px;margin-bottom:16px}
-.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
-.room-info{text-align:center}
-.room-code{font-size:48px;font-weight:bold;color:#1890ff;letter-spacing:8px;margin:12px 0}
-.room-hint{color:#888;font-size:14px}
-.mode-selector{display:flex;gap:8px;margin-bottom:12px}
-.mode-selector button{flex:1;padding:10px;border:2px solid #d9d9d9;border-radius:8px;background:#fff;cursor:pointer;font-size:15px;transition:all .2s}
-.mode-selector button.active{border-color:#1890ff;background:#e6f7ff;color:#1890ff;font-weight:bold}
-.question-display{font-size:28px;text-align:center;padding:24px 0;min-height:80px;color:#333;word-break:break-all}
-.controls{text-align:center;margin-top:12px}
-.controls button{padding:12px 32px;border:none;border-radius:8px;font-size:16px;cursor:pointer;margin:0 6px;transition:all .2s}
-#nextBtn{background:#1890ff;color:#fff}
-#nextBtn:hover{background:#40a9ff}
-#nextBtn:disabled{background:#d9d9d9;cursor:not-allowed}
-#resetBtn{background:#fff;color:#666;border:1px solid #d9d9d9}
-#resetBtn:hover{border-color:#1890ff;color:#1890ff}
-.status{font-size:18px;text-align:center;padding:8px;color:#faad14;min-height:28px}
-.answer-reveal{font-size:16px;text-align:center;padding:8px;color:#52c41a;background:#f6ffed;border-radius:8px;margin-top:8px;display:none}
-.student-list h3{font-size:15px;color:#666;margin-bottom:8px}
-.student-list ul{list-style:none;display:flex;flex-wrap:wrap;gap:6px}
-.student-list li{background:#e6f7ff;color:#1890ff;padding:4px 12px;border-radius:16px;font-size:13px}
-.race-log{max-height:150px;overflow-y:auto;margin-top:8px}
-.race-log-item{font-size:13px;color:#666;padding:2px 0;border-bottom:1px solid #f0f0f0}
-.race-log-item:first-child{color:#1890ff;font-weight:bold}
-.firebase-config-notice{background:#fff7e6;border:1px solid #ffd591;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#ad6800;display:none}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;padding:16px;max-width:800px;margin:0 auto}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+h2{margin-bottom:12px;color:#333}
+h3{margin-bottom:8px;color:#555}
+.room-code{font-size:52px;font-weight:bold;text-align:center;color:#1890ff;letter-spacing:12px;padding:12px 0}
+.room-hint{text-align:center;color:#999;font-size:14px;margin-bottom:8px}
+.status{text-align:center;padding:10px;border-radius:8px;margin:8px 0;font-size:15px}
+.status.ok{background:#f6ffed;color:#52c41a}
+.status.err{background:#fff2f0;color:#ff4d4f}
+.status.warn{background:#fffbe6;color:#faad14}
+.btn{display:inline-block;padding:10px 24px;border-radius:8px;border:none;cursor:pointer;font-size:16px;font-weight:500;transition:all .2s;margin:4px}
+.btn-primary{background:#1890ff;color:#fff}
+.btn-primary:hover{background:#40a9ff}
+.btn-danger{background:#ff4d4f;color:#fff}
+.btn-success{background:#52c41a;color:#fff}
+.btn-warning{background:#faad14;color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+select{padding:8px 16px;border-radius:8px;border:1px solid #d9d9d9;font-size:16px;outline:none}
+select:focus{border-color:#1890ff}
+.student-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.student-tag{background:#e6f7ff;color:#1890ff;padding:6px 14px;border-radius:16px;font-size:14px}
+.racer-box{background:#fff7e6;border:2px solid #ffa940;border-radius:12px;padding:16px;text-align:center;font-size:22px;font-weight:bold;margin:8px 0;animation:pulse .8s ease-in-out}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
+.result{padding:16px;border-radius:12px;text-align:center;font-size:20px;font-weight:bold;margin:8px 0}
+.result.correct{background:#f6ffed;color:#52c41a;border:2px solid #b7eb8f}
+.result.wrong{background:#fff2f0;color:#ff4d4f;border:2px solid #ffccc7}
+.q-display{font-size:36px;text-align:center;padding:16px;font-weight:bold;color:#333;word-break:break-all}
+.a-display{font-size:16px;color:#999;text-align:center;margin-top:4px}
+.flex-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>英语抢答 - 教师端</h1>
 
-  <div class="firebase-config-notice" id="configNotice">
-    请先配置 Firebase：将下方 firebaseConfig 中的占位符替换为你的 Firebase 项目配置。
-  </div>
-
-  <div class="card room-info">
-    <div>房间号</div>
-    <div class="room-code" id="roomCode">----</div>
-    <div class="room-hint">学生输入此房间号即可加入</div>
-  </div>
-
-  <div class="card student-list">
-    <h3>在线学生 (<span id="studentCount">0</span>)</h3>
-    <ul id="studentUl"></ul>
-  </div>
-
-  <div class="card">
-    <div class="mode-selector">
-      <button class="active" data-mode="en2cn" onclick="setMode('en2cn',this)">英译汉</button>
-      <button data-mode="cn2en" onclick="setMode('cn2en',this)">汉译英</button>
-      <button data-mode="fill" onclick="setMode('fill',this)">填空</button>
-    </div>
-    <div class="question-display" id="question">点击「下一题」开始</div>
-    <div class="status" id="status">等待开始...</div>
-    <div class="answer-reveal" id="answerReveal"></div>
-    <div class="controls">
-      <button id="nextBtn" onclick="nextQuestion()">下一题</button>
-      <button id="resetBtn" onclick="resetRound()">重置本轮</button>
-    </div>
-    <div class="race-log" id="raceLog"></div>
+<!-- 房间卡片 -->
+<div class="card" id="roomCard">
+  <h2>🏫 教师端 - 英语课堂抢答</h2>
+  <p class="room-hint">房间号（告诉学生）</p>
+  <div class="room-code" id="roomCode">----</div>
+  <div class="status warn" id="status">点击下方按钮创建房间</div>
+  <div style="text-align:center">
+    <button class="btn btn-primary" id="createBtn" onclick="createRoom()">创建房间</button>
   </div>
 </div>
 
-<script type="module">
-// ============================================================
-// Firebase 配置 - 请将下面的占位符替换为你的 Firebase 项目配置
-// 获取方式：Firebase Console → 项目设置 → 你的应用 → Config
-// ============================================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getDatabase, ref, set, get, push, update, remove, onValue, onChildAdded, onChildRemoved, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<!-- 题目控制 -->
+<div class="card" id="controlCard" style="display:none">
+  <h3>📋 出题控制</h3>
+  <div class="flex-row" style="margin:10px 0">
+    <label>题型：</label>
+    <select id="mode">
+      <option value="en2cn">英译汉</option>
+      <option value="cn2en">汉译英</option>
+      <option value="fill">挖空填空</option>
+    </select>
+  </div>
+  <div class="flex-row">
+    <button class="btn btn-primary" onclick="nextQuestion()">📢 下一题</button>
+    <button class="btn btn-warning" onclick="unlockRace()" id="unlockBtn" style="display:none">🔓 解锁抢答</button>
+    <button class="btn btn-danger" onclick="closeRoom()">关闭房间</button>
+  </div>
+</div>
 
-const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT-default-rtdb.firebaseio.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
-};
+<!-- 当前题目 -->
+<div class="card" id="questionCard" style="display:none">
+  <h3>📝 当前题目</h3>
+  <div class="q-display" id="qDisplay"></div>
+  <div class="a-display" id="aDisplay"></div>
+</div>
 
-// 检查是否已配置
-if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-  document.getElementById('configNotice').style.display = 'block';
-}
+<!-- 在线学生 -->
+<div class="card" id="studentCard" style="display:none">
+  <h3>👥 在线学生（<span id="sCount">0</span>人）</h3>
+  <div class="student-list" id="sList"></div>
+</div>
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+<!-- 抢答结果 -->
+<div class="card" id="raceCard" style="display:none">
+  <h3>🏆 抢答情况</h3>
+  <div id="racerInfo"></div>
+  <div id="resultInfo"></div>
+</div>
 
-// ============================================================
-// 词表
-// ============================================================
-const wordList = [
-  {en:"employee",cn:"雇员,员工"},{en:"social",cn:"社会的"},{en:"reputation",cn:"声誉"},
-  {en:"behavior",cn:"行为"},{en:"analyze",cn:"分析"},{en:"comfortable",cn:"舒适的"},
-  {en:"treatment",cn:"治疗"},{en:"security",cn:"安全"},{en:"professional",cn:"专业的"},
-  {en:"graduation",cn:"毕业"},{en:"tanker",cn:"油船"},{en:"submarine",cn:"潜艇"},
-  {en:"welding",cn:"焊接"},{en:"container",cn:"集装箱"}
+<script>
+// ====== 词库 ======
+const WORDS=[
+  {en:"apple",cn:"苹果"},{en:"banana",cn:"香蕉"},{en:"cat",cn:"猫"},
+  {en:"dog",cn:"狗"},{en:"elephant",cn:"大象"},{en:"fish",cn:"鱼"},
+  {en:"grape",cn:"葡萄"},{en:"horse",cn:"马"},{en:"ice",cn:"冰"},
+  {en:"juice",cn:"果汁"},{en:"kite",cn:"风筝"},{en:"lion",cn:"狮子"},
+  {en:"monkey",cn:"猴子"},{en:"nose",cn:"鼻子"}
 ];
 
-let currentWord = null;
-let correctPart = "";
-let currentMode = "en2cn";
-let roomId = "";
-let currentAnswer = ""; // 教师端本地持有，不写入 Firebase
+// ====== 状态 ======
+let peer=null, students={}, curQ=null, racerConn=null, racerName=null, roomCode='';
 
-// ============================================================
-// 房间管理
-// ============================================================
-function generateRoomId() {
-  return String(Math.floor(1000 + Math.random() * 9000));
-}
+// ====== 创建房间 ======
+function createRoom(){
+  if(peer){peer.destroy();peer=null;}
+  students={};racerConn=null;racerName=null;curQ=null;
 
-async function createRoom() {
-  roomId = generateRoomId();
-  document.getElementById('roomCode').innerText = roomId;
+  roomCode=String(Math.floor(1000+Math.random()*9000));
+  document.getElementById('roomCode').textContent=roomCode;
+  setStatus('正在连接服务器...','warn');
+  document.getElementById('createBtn').disabled=true;
 
-  const roomRef = ref(db, 'rooms/' + roomId);
-  await set(roomRef, {
-    info: { createdAt: Date.now(), active: true },
-    question: { q: "等待出题...", mode: "en2cn", lock: "0" },
-    currentRacer: "",
-    result: { studentAnswer: "", correct: null, answer: "" }
+  peer=new Peer('wg'+roomCode);
+
+  peer.on('open',()=>{
+    setStatus('✅ 房间已创建！请告诉学生房间号：'+roomCode,'ok');
+    show('controlCard');show('studentCard');
+    document.getElementById('createBtn').style.display='none';
   });
 
-  // 断线自动删除房间
-  onDisconnect(roomRef).remove();
+  peer.on('connection',conn=>{
+    conn.on('open',()=>{});
+    conn.on('data',d=>handleMsg(conn,d));
+    conn.on('close',()=>removeStu(conn));
+    conn.on('error',()=>removeStu(conn));
+  });
 
-  // 监听学生加入/离开
-  listenStudents();
-  // 监听抢答
-  listenRaces();
-  // 监听学生提交答案
-  listenResult();
+  peer.on('error',err=>{
+    if(err.type==='unavailable-id'){
+      setStatus('房间号冲突，请重试','err');
+      document.getElementById('createBtn').disabled=false;
+    }else{
+      setStatus('❌ 连接错误: '+err.type,'err');
+    }
+  });
+
+  peer.on('disconnected',()=>{
+    setStatus('⚠️ 与服务器断开，尝试重连...','warn');
+    peer.reconnect();
+  });
 }
 
-// ============================================================
-// 题型切换
-// ============================================================
-window.setMode = function(mode, btn) {
-  currentMode = mode;
-  document.querySelectorAll('.mode-selector button').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-};
+// ====== 处理学生消息 ======
+function handleMsg(conn,data){
+  switch(data.type){
+    case 'join':
+      students[conn.peer]={conn,name:data.name};
+      updateStuList();
+      // 如果当前有题，发给新加入的学生
+      if(curQ){
+        conn.send({type:'question',q:curQ.q,mode:curQ.mode,fillOptions:curQ.fillOptions});
+        if(racerName) conn.send({type:'locked',racerName});
+      }
+      break;
 
-// ============================================================
-// 出题
-// ============================================================
-function makeBlank(word) {
-  let mid = Math.floor(word.length / 2);
-  correctPart = word.substr(mid, 3);
-  return word.substr(0, mid) + "___" + word.substr(mid + 3);
+    case 'race':
+      if(!racerName){
+        const stu=students[conn.peer];
+        if(!stu)break;
+        racerName=stu.name;
+        racerConn=conn;
+        broadcast({type:'locked',racerName});
+        // 通知抢答者可以输入答案
+        conn.send({type:'pleaseAnswer'});
+        show('raceCard');
+        document.getElementById('racerInfo').innerHTML='<div class="racer-box">🏃 '+racerName+' 抢答了！</div>';
+        document.getElementById('resultInfo').innerHTML='';
+        show('unlockBtn');
+      }else{
+        conn.send({type:'raceFail',msg:'已有同学抢答'});
+      }
+      break;
+
+    case 'answer':
+      if(conn.peer===racerConn?.peer && curQ){
+        const correct=checkAns(data.answer,curQ);
+        conn.send({type:'result',correct,answer:curQ.answer});
+        broadcast({type:'raceResult',racerName,correct,answer:curQ.answer});
+        showResult(racerName,correct,data.answer);
+      }
+      break;
+  }
 }
 
-window.nextQuestion = async function() {
-  currentWord = wordList[Math.floor(Math.random() * wordList.length)];
-  const mode = currentMode;
-  let show = "";
-  correctPart = "";
+// ====== 出题 ======
+function nextQuestion(){
+  const mode=document.getElementById('mode').value;
+  const word=WORDS[Math.floor(Math.random()*WORDS.length)];
 
-  if (mode === "en2cn") {
-    show = currentWord.en;
-    currentAnswer = currentWord.cn;
-  } else if (mode === "cn2en") {
-    show = currentWord.cn;
-    currentAnswer = currentWord.en;
-  } else if (mode === "fill") {
-    show = makeBlank(currentWord.en);
-    currentAnswer = correctPart;
+  let q,answer,fillOptions=null,correctPart=null;
+
+  if(mode==='en2cn'){
+    q=word.en; answer=word.cn;
+  }else if(mode==='cn2en'){
+    q=word.cn; answer=word.en;
+  }else{
+    const chars=word.en.split('');
+    const hideIdx=Math.floor(Math.random()*chars.length);
+    correctPart=chars[hideIdx];
+    q=chars.map((c,i)=>i===hideIdx?'____':c).join('');
+    answer=word.en;
+
+    // 生成干扰项（随机字母，不重复）
+    const alpha='abcdefghijklmnopqrstuvwxyz'.split('').filter(c=>c!==correctPart);
+    shuffle(alpha);
+    const distractors=alpha.slice(0,3);
+    const all=[correctPart,...distractors];
+    shuffle(all);
+    fillOptions={A:all[0],B:all[1],C:all[2],D:all[3]};
   }
 
-  document.getElementById('question').innerText = show;
-  document.getElementById('status').innerText = "等待抢答...";
-  document.getElementById('status').style.color = "#faad14";
-  document.getElementById('answerReveal').style.display = 'none';
-  document.getElementById('nextBtn').disabled = true;
-  document.getElementById('raceLog').innerHTML = '';
+  curQ={q,mode,answer,fillOptions,correctPart};
+  racerName=null;racerConn=null;
 
-  // 生成填空题选项（随机打乱，修复原来选项A永远是正确答案的bug）
-  let fillOptions = null;
-  if (mode === "fill" && correctPart) {
-    const distractors = [
-      correctPart[0] + correctPart[1] + correctPart[1],
-      correctPart[0] + correctPart[2] + correctPart[2],
-      correctPart[1] + correctPart[1] + correctPart[2]
-    ];
-    const allOptions = [correctPart, ...distractors];
-    // Fisher-Yates 洗牌
-    for (let i = allOptions.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [allOptions[i], allOptions[j]] = [allOptions[j], allOptions[i]];
-    }
-    fillOptions = { A: allOptions[0], B: allOptions[1], C: allOptions[2], D: allOptions[3] };
+  // 显示题目
+  show('questionCard');
+  document.getElementById('qDisplay').textContent=q;
+  let ansText='答案：'+answer;
+  if(fillOptions){
+    const correctOpt=Object.entries(fillOptions).find(([k,v])=>v===correctPart);
+    ansText+=' （正确选项：'+correctOpt[0]+'）';
   }
+  document.getElementById('aDisplay').textContent=ansText;
 
-  // 写入 Firebase
-  const questionRef = ref(db, 'rooms/' + roomId + '/question');
-  await set(questionRef, { q: show, mode: mode, lock: "0" });
+  // 广播给学生（不发送正确答案！）
+  broadcast({type:'question',q,mode,fillOptions});
 
-  // 清空抢答和结果
-  const updateData = {
-    currentRacer: "",
-    result: { studentAnswer: "", correct: null, answer: "" }
-  };
-  if (fillOptions) {
-    updateData.fillOptions = fillOptions;
-  } else {
-    updateData.fillOptions = null;
+  // 重置抢答
+  hide('raceCard');hide('unlockBtn');
+}
+
+// ====== 解锁抢答（抢答者掉线或超时时用） ======
+function unlockRace(){
+  racerName=null;racerConn=null;
+  broadcast({type:'unlock'});
+  document.getElementById('racerInfo').innerHTML='<div style="text-align:center;color:#999">抢答已解锁，学生可以重新抢答</div>';
+  hide('unlockBtn');
+}
+
+// ====== 关闭房间 ======
+function closeRoom(){
+  if(peer){peer.destroy();peer=null;}
+  students={};racerConn=null;racerName=null;curQ=null;
+  setStatus('房间已关闭','warn');
+  document.getElementById('roomCode').textContent='----';
+  document.getElementById('createBtn').style.display='inline-block';
+  document.getElementById('createBtn').disabled=false;
+  hide('controlCard');hide('questionCard');hide('studentCard');hide('raceCard');hide('unlockBtn');
+}
+
+// ====== 判断答案 ======
+function checkAns(studentAns,question){
+  if(!question)return false;
+  if(question.mode==='fill'){
+    // 学生发送选项字母(A/B/C/D)，查找对应字符
+    const selChar=question.fillOptions?.[studentAns];
+    return selChar===question.correctPart;
   }
-  await update(ref(db, 'rooms/' + roomId), updateData);
-
-  // 清空 races 节点
-  const racesRef = ref(db, 'rooms/' + roomId + '/races');
-  await remove(racesRef);
-};
-
-// ============================================================
-// 重置本轮
-// ============================================================
-window.resetRound = async function() {
-  document.getElementById('status').innerText = "已重置，可抢答";
-  document.getElementById('status').style.color = "#faad14";
-  document.getElementById('answerReveal').style.display = 'none';
-  document.getElementById('raceLog').innerHTML = '';
-
-  await update(ref(db, 'rooms/' + roomId), {
-    currentRacer: "",
-    "question/lock": "0"
-  });
-  await update(ref(db, 'rooms/' + roomId + '/result'), {
-    studentAnswer: "", correct: null, answer: ""
-  });
-
-  const racesRef = ref(db, 'rooms/' + roomId + '/races');
-  await remove(racesRef);
-};
-
-// ============================================================
-// 监听学生列表
-// ============================================================
-function listenStudents() {
-  const studentsRef = ref(db, 'rooms/' + roomId + '/students');
-  const ul = document.getElementById('studentUl');
-
-  onChildAdded(studentsRef, (snap) => {
-    const data = snap.val();
-    const li = document.createElement('li');
-    li.id = 'stu_' + snap.key;
-    li.innerText = data.name;
-    ul.appendChild(li);
-    document.getElementById('studentCount').innerText = ul.children.length;
-  });
-
-  onChildRemoved(studentsRef, (snap) => {
-    const li = document.getElementById('stu_' + snap.key);
-    if (li) li.remove();
-    document.getElementById('studentCount').innerText = ul.children.length;
-  });
+  return studentAns.trim().toLowerCase()===question.answer.trim().toLowerCase();
 }
 
-// ============================================================
-// 监听抢答
-// ============================================================
-function listenRaces() {
-  const racesRef = ref(db, 'rooms/' + roomId + '/races');
-
-  onValue(racesRef, async (snap) => {
-    const data = snap.val();
-    if (!data) return;
-
-    // 按时间戳排序
-    const entries = Object.entries(data).sort((a, b) => a[1].timestamp - b[1].timestamp);
-
-    // 显示抢答日志
-    const logEl = document.getElementById('raceLog');
-    logEl.innerHTML = '';
-    entries.forEach(([key, val], idx) => {
-      const div = document.createElement('div');
-      div.className = 'race-log-item';
-      div.innerText = (idx === 0 ? '🏆 ' : '') + val.name + ' 抢答了';
-      logEl.appendChild(div);
-    });
-
-    // 取最快的抢答者
-    const fastest = entries[0];
-    if (!fastest) return;
-
-    const fastestId = fastest[0];
-    const fastestName = fastest[1].name;
-
-    // 检查是否已锁定
-    const lockSnap = await get(ref(db, 'rooms/' + roomId + '/question/lock'));
-    if (lockSnap.val() === "1") return; // 已有人抢到，不再处理
-
-    // 锁定抢答，设置抢到者
-    await update(ref(db, 'rooms/' + roomId), {
-      "question/lock": "1",
-      currentRacer: fastestId
-    });
-
-    document.getElementById('status').innerText = fastestName + " 抢到了！";
-    document.getElementById('status').style.color = "#1890ff";
-  });
+// ====== 显示结果 ======
+function showResult(name,correct,stuAns){
+  const div=document.getElementById('resultInfo');
+  if(correct){
+    div.innerHTML='<div class="result correct">✅ '+name+' 回答正确！答案：'+curQ.answer+'</div>';
+  }else{
+    div.innerHTML='<div class="result wrong">❌ '+name+' 回答错误！正确答案：'+curQ.answer+'（学生答案：'+stuAns+'）</div>';
+  }
 }
 
-// ============================================================
-// 监听学生提交答案并判断
-// ============================================================
-function listenResult() {
-  const resultRef = ref(db, 'rooms/' + roomId + '/result/studentAnswer');
-
-  onValue(resultRef, async (snap) => {
-    const studentAnswer = snap.val();
-    if (!studentAnswer) return;
-
-    // 教师端判断答案
-    let isCorrect = false;
-
-    if (currentMode === "en2cn") {
-      // 英译汉：支持多译名（用逗号/顿号分隔）
-      const accepted = currentAnswer.split(/[,，、]/).map(s => s.trim().toLowerCase());
-      isCorrect = accepted.includes(studentAnswer.trim().toLowerCase());
-    } else {
-      // 汉译英 / 填空：精确匹配
-      isCorrect = studentAnswer.trim().toLowerCase() === currentAnswer.trim().toLowerCase();
-    }
-
-    // 写入结果到 Firebase
-    await update(ref(db, 'rooms/' + roomId + '/result'), {
-      correct: isCorrect,
-      answer: currentAnswer
-    });
-
-    const statusEl = document.getElementById('status');
-    const racerSnap = await get(ref(db, 'rooms/' + roomId + '/currentRacer'));
-    const racerId = racerSnap.val();
-
-    let racerName = "";
-    if (racerId) {
-      const nameSnap = await get(ref(db, 'rooms/' + roomId + '/students/' + racerId + '/name'));
-      racerName = nameSnap.val() || "学生";
-    }
-
-    if (isCorrect) {
-      statusEl.innerText = racerName + " 回答正确！";
-      statusEl.style.color = "#52c41a";
-    } else {
-      statusEl.innerText = racerName + " 回答错误";
-      statusEl.style.color = "#ff4d4f";
-    }
-
-    const revealEl = document.getElementById('answerReveal');
-    revealEl.innerText = "学生答案：" + studentAnswer + "\n正确答案：" + currentAnswer;
-    revealEl.style.display = 'block';
-    revealEl.style.color = isCorrect ? "#52c41a" : "#ff4d4f";
-    revealEl.style.background = isCorrect ? "#f6ffed" : "#fff2f0";
-
-    document.getElementById('nextBtn').disabled = false;
+// ====== 工具函数 ======
+function broadcast(data){
+  Object.values(students).forEach(s=>{
+    try{if(s.conn.open)s.conn.send(data);}catch(e){}
   });
 }
-
-// ============================================================
-// 初始化
-// ============================================================
-createRoom();
+function removeStu(conn){
+  if(students[conn.peer]){
+    const name=students[conn.peer].name;
+    delete students[conn.peer];
+    updateStuList();
+    // 如果抢答者掉线，解锁
+    if(racerConn?.peer===conn.peer){
+      racerName=null;racerConn=null;
+      broadcast({type:'unlock'});
+      document.getElementById('racerInfo').innerHTML='<div style="text-align:center;color:#faad14">⚠️ '+name+' 已断开，抢答已解锁</div>';
+    }
+  }
+}
+function updateStuList(){
+  const names=Object.values(students).map(s=>s.name);
+  document.getElementById('sList').innerHTML=names.map(n=>'<span class="student-tag">'+n+'</span>').join('')||'<span style="color:#999">暂无学生</span>';
+  document.getElementById('sCount').textContent=names.length;
+}
+function setStatus(msg,cls){
+  const el=document.getElementById('status');
+  el.textContent=msg;el.className='status '+cls;
+}
+function show(id){document.getElementById(id).style.display='block';}
+function hide(id){document.getElementById(id).style.display='none';}
+function shuffle(arr){for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}}
 </script>
 </body>
 </html>
